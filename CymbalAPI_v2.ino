@@ -124,6 +124,8 @@ void processIncoming(WiFiClient &client) {
   int endpos;
   String tempstring;
   String theline;
+  String commandstring ="";
+  String demostring = "demo";
 
   String currentLine = "";                // make a String to hold incoming data from the client
     while (client.connected()) {            // loop while the client's connected
@@ -147,6 +149,16 @@ void processIncoming(WiFiClient &client) {
           if (theline.indexOf("cmd:") == 0) {
              endpos = theline.indexOf("\n");
              Serial.println("cmd waarde: >" + theline.substring(5,endpos) + "<");
+             commandstring = commandstring + theline.substring(5,endpos);
+             commandstring.trim();
+             Serial.println("commandstring: >" + commandstring + "<");
+             
+             if (commandstring == demostring) {
+                flagDemo = 1;
+                Serial.println("commandstring wel demo");
+             } else {
+                Serial.println("commandstring niet demo");
+             }
           }
           
           //regel weer leegmaken
@@ -188,11 +200,21 @@ void loop(){
   if (client) {                             // If a new client connects,
     Serial.println("New Client.");          
     Serial.println("call processIncoming"); 
-    processIncoming(client);            //process GET request from the http header
-    Serial.println("call sendResponseObject"); 
-    sendResponseObject(client);             //return JSON object to requestor
+    processIncoming(client);                //process GET request from the http header
+    //bij een demo doen we alleen demo, geen json response
     if (flagDemo == 1){
       runDemo();
+      // Write response headers
+      client.println("HTTP/1.0 200 OK");
+      client.println("Content-Type: application/json");
+      client.println("Connection: close");
+      client.println();      
+    } else {
+      Serial.println("call sendResponseObject"); 
+      sendResponseObject(client);             //return JSON object to requestor
+      if (flagDemo == 1){
+        runDemo();
+      }
     }
   }
 }
